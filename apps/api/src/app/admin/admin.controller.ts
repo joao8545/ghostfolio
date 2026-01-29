@@ -2,6 +2,8 @@ import { HasPermission } from '@ghostfolio/api/decorators/has-permission.decorat
 import { HasPermissionGuard } from '@ghostfolio/api/guards/has-permission.guard';
 import { TransformDataSourceInRequestInterceptor } from '@ghostfolio/api/interceptors/transform-data-source-in-request/transform-data-source-in-request.interceptor';
 import { ApiService } from '@ghostfolio/api/services/api/api.service';
+import { CustomDataSourceService } from '@ghostfolio/api/services/custom-data-source/custom-data-source.service';
+import { CustomService } from '@ghostfolio/api/services/data-provider/custom/custom.service';
 import { ManualService } from '@ghostfolio/api/services/data-provider/manual/manual.service';
 import { DemoService } from '@ghostfolio/api/services/demo/demo.service';
 import { DataGatheringService } from '@ghostfolio/api/services/queues/data-gathering/data-gathering.service';
@@ -13,7 +15,9 @@ import {
   GATHER_ASSET_PROFILE_PROCESS_JOB_OPTIONS
 } from '@ghostfolio/common/config';
 import {
+  CreateCustomDataSourceDto,
   UpdateAssetProfileDto,
+  UpdateCustomDataSourceDto,
   UpdatePropertyDto
 } from '@ghostfolio/common/dtos';
 import { getAssetProfileIdentifier } from '@ghostfolio/common/helper';
@@ -50,7 +54,7 @@ import {
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { DataSource, MarketData, Prisma, SymbolProfile } from '@prisma/client';
+import { CustomDataSource, DataSource, MarketData, Prisma, SymbolProfile } from '@prisma/client';
 import { isDate, parseISO } from 'date-fns';
 import { StatusCodes, getReasonPhrase } from 'http-status-codes';
 
@@ -61,6 +65,8 @@ export class AdminController {
   public constructor(
     private readonly adminService: AdminService,
     private readonly apiService: ApiService,
+    private readonly customDataSourceService: CustomDataSourceService,
+    private readonly customService: CustomService,
     private readonly dataGatheringService: DataGatheringService,
     private readonly demoService: DemoService,
     private readonly manualService: ManualService,
@@ -330,5 +336,139 @@ export class AdminController {
   @UseGuards(AuthGuard('jwt'), HasPermissionGuard)
   public async getUser(@Param('id') id: string): Promise<AdminUserResponse> {
     return this.adminService.getUser(id);
+  }
+
+  // Custom Data Source endpoints
+  @Get('custom-data-sources')
+  @HasPermission(permissions.accessAdminControl)
+  @UseGuards(AuthGuard('jwt'), HasPermissionGuard)
+  public async getCustomDataSources(): Promise<CustomDataSource[]> {
+    return this.customDataSourceService.getAll(this.request.user.id);
+  }
+
+  @Get('custom-data-sources/:id')
+  @HasPermission(permissions.accessAdminControl)
+  @UseGuards(AuthGuard('jwt'), HasPermissionGuard)
+  public async getCustomDataSource(
+    @Param('id') id: string
+  ): Promise<CustomDataSource> {
+    const customDataSource = await this.customDataSourceService.get(id);
+
+    if (!customDataSource) {
+      throw new HttpException(
+        getReasonPhrase(StatusCodes.NOT_FOUND),
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    return customDataSource;
+  }
+
+  @Post('custom-data-sources')
+  @HasPermission(permissions.accessAdminControl)
+  @UseGuards(AuthGuard('jwt'), HasPermissionGuard)
+  public async createCustomDataSource(
+    @Body() data: CreateCustomDataSourceDto
+  ): Promise<CustomDataSource> {
+    try {
+      return await this.customDataSourceService.create({
+        name: data.name,
+        scraperConfiguration: data.scraperConfiguration,
+        userId: this.request.user.id
+      });
+    } catch (error) {
+      if (error?.code === 'P2002') {
+        throw new HttpException(
+          'A custom data source with this name already exists',
+          StatusCodes.CONFLICT
+        );
+      }
+      throw new HttpException(
+        getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Patch('custom-data-sources/:id')
+  @HasPermission(permissions.accessAdminControl)
+  @UseGuards(AuthGuard('jwt'), HasPermissionGuard)
+  public async updateCustomDataSource(
+    @Param('id') id: string,
+    @Body() data: UpdateCustomDataSourceDto
+  ): Promise<CustomDataSource> {
+    try {
+      return await this.customDataSourceService.update(id, data);
+    } catch (error) {
+      if (error?.code === 'P2025') {
+        throw new HttpException(
+          getReasonPhrase(StatusCodes.NOT_FOUND),
+          StatusCodes.NOT_FOUND
+        );
+      }
+      throw new HttpException(
+        getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Delete('custom-data-sources/:id')
+  @HasPermission(permissions.accessAdminControl)
+  @UseGuards(AuthGuard('jwt'), HasPermissionGuard)
+  public async deleteCustomDataSource(
+    @Param('id') id: string
+  ): Promise<CustomDataSource> {
+    try {
+      return await this.customDataSourceService.delete(id);
+    } catch (error) {
+      if (error?.code === 'P2025') {
+        throw new HttpException(
+          getReasonPhrase(StatusCodes.NOT_FOUND),
+          StatusCodes.NOT_FOUND
+        );
+      }
+      throw new HttpException(
+        getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post('custom-data-sources/:id/test')
+  @HasPermission(permissions.accessAdminControl)
+  @UseGuards(AuthGuard('jwt'), HasPermissionGuard)
+  public async testCustomDataSource(
+    @Param('id') id: string
+  ): Promise<{ price: number }> {
+    try {
+      const customDataSource = await this.customDataSourceService.get(id);
+
+      if (!customDataSource) {
+        throw new HttpException(
+          getReasonPhrase(StatusCodes.NOT_FOUND),
+          StatusCodes.NOT_FOUND
+        );
+      }
+
+      const price = await this.customService.test(
+        customDataSource.scraperConfiguration as ScraperConfiguration
+      );
+
+      if (price) {
+        return { price };
+      }
+
+      throw new Error(
+        `Could not parse the current market price for custom data source ${customDataSource.name}`
+      );
+    } catch (error) {
+      Logger.error(error, 'AdminController');
+
+      throw new HttpException(
+        error.message ?? getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
+        error.status ?? StatusCodes.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 }

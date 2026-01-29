@@ -1,8 +1,10 @@
 import { RedisCacheModule } from '@ghostfolio/api/app/redis-cache/redis-cache.module';
 import { ConfigurationModule } from '@ghostfolio/api/services/configuration/configuration.module';
 import { CryptocurrencyModule } from '@ghostfolio/api/services/cryptocurrency/cryptocurrency.module';
+import { CustomDataSourceModule } from '@ghostfolio/api/services/custom-data-source/custom-data-source.module';
 import { AlphaVantageService } from '@ghostfolio/api/services/data-provider/alpha-vantage/alpha-vantage.service';
 import { CoinGeckoService } from '@ghostfolio/api/services/data-provider/coingecko/coingecko.service';
+import { CustomService } from '@ghostfolio/api/services/data-provider/custom/custom.service';
 import { EodHistoricalDataService } from '@ghostfolio/api/services/data-provider/eod-historical-data/eod-historical-data.service';
 import { FinancialModelingPrepService } from '@ghostfolio/api/services/data-provider/financial-modeling-prep/financial-modeling-prep.service';
 import { GhostfolioService } from '@ghostfolio/api/services/data-provider/ghostfolio/ghostfolio.service';
@@ -25,6 +27,7 @@ import { DataProviderService } from './data-provider.service';
   imports: [
     ConfigurationModule,
     CryptocurrencyModule,
+    CustomDataSourceModule,
     DataEnhancerModule,
     MarketDataModule,
     PrismaModule,
@@ -35,6 +38,7 @@ import { DataProviderService } from './data-provider.service';
   providers: [
     AlphaVantageService,
     CoinGeckoService,
+    CustomService,
     DataProviderService,
     EodHistoricalDataService,
     FinancialModelingPrepService,
@@ -47,6 +51,7 @@ import { DataProviderService } from './data-provider.service';
       inject: [
         AlphaVantageService,
         CoinGeckoService,
+        CustomService,
         EodHistoricalDataService,
         FinancialModelingPrepService,
         GhostfolioService,
@@ -59,6 +64,7 @@ import { DataProviderService } from './data-provider.service';
       useFactory: (
         alphaVantageService,
         coinGeckoService,
+        customService,
         eodHistoricalDataService,
         financialModelingPrepService,
         ghostfolioService,
@@ -69,6 +75,7 @@ import { DataProviderService } from './data-provider.service';
       ) => [
         alphaVantageService,
         coinGeckoService,
+        customService,
         eodHistoricalDataService,
         financialModelingPrepService,
         ghostfolioService,
