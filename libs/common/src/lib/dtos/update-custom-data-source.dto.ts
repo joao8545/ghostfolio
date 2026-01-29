@@ -1,6 +1,6 @@
 import { ScraperConfiguration } from '@ghostfolio/common/interfaces';
 
-import { IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateCustomDataSourceDto {
   @IsOptional()
@@ -8,5 +8,6 @@ export class UpdateCustomDataSourceDto {
   name?: string;
 
   @IsOptional()
+  @IsNotEmpty()
   scraperConfiguration?: ScraperConfiguration;
 }

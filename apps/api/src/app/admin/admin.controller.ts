@@ -398,8 +398,31 @@ export class AdminController {
     @Body() data: UpdateCustomDataSourceDto
   ): Promise<CustomDataSource> {
     try {
+      const customDataSource = await this.customDataSourceService.get(id);
+
+      if (!customDataSource) {
+        throw new HttpException(
+          getReasonPhrase(StatusCodes.NOT_FOUND),
+          StatusCodes.NOT_FOUND
+        );
+      }
+
+      // Check ownership - users can only update their own sources or system-wide sources
+      if (
+        customDataSource.userId &&
+        customDataSource.userId !== this.request.user.id
+      ) {
+        throw new HttpException(
+          getReasonPhrase(StatusCodes.FORBIDDEN),
+          StatusCodes.FORBIDDEN
+        );
+      }
+
       return await this.customDataSourceService.update(id, data);
     } catch (error) {
+      if (error?.status === StatusCodes.FORBIDDEN) {
+        throw error;
+      }
       if (error?.code === 'P2025') {
         throw new HttpException(
           getReasonPhrase(StatusCodes.NOT_FOUND),
@@ -420,8 +443,31 @@ export class AdminController {
     @Param('id') id: string
   ): Promise<CustomDataSource> {
     try {
+      const customDataSource = await this.customDataSourceService.get(id);
+
+      if (!customDataSource) {
+        throw new HttpException(
+          getReasonPhrase(StatusCodes.NOT_FOUND),
+          StatusCodes.NOT_FOUND
+        );
+      }
+
+      // Check ownership - users can only delete their own sources or system-wide sources
+      if (
+        customDataSource.userId &&
+        customDataSource.userId !== this.request.user.id
+      ) {
+        throw new HttpException(
+          getReasonPhrase(StatusCodes.FORBIDDEN),
+          StatusCodes.FORBIDDEN
+        );
+      }
+
       return await this.customDataSourceService.delete(id);
     } catch (error) {
+      if (error?.status === StatusCodes.FORBIDDEN) {
+        throw error;
+      }
       if (error?.code === 'P2025') {
         throw new HttpException(
           getReasonPhrase(StatusCodes.NOT_FOUND),
@@ -455,7 +501,7 @@ export class AdminController {
         customDataSource.scraperConfiguration as unknown as ScraperConfiguration
       );
 
-      if (price) {
+      if (price != null) {
         return { price };
       }
 

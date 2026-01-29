@@ -13,8 +13,7 @@ import { PrismaService } from '@ghostfolio/api/services/prisma/prisma.service';
 import { SymbolProfileService } from '@ghostfolio/api/services/symbol-profile/symbol-profile.service';
 import {
   DATE_FORMAT,
-  extractNumberFromString,
-  getYesterday
+  extractNumberFromString
 } from '@ghostfolio/common/helper';
 import {
   DataProviderHistoricalResponse,
@@ -127,13 +126,23 @@ export class CustomService implements DataProviderInterface {
 
       const value = await this.scrape(scraperConfig);
 
-      return {
-        [symbol]: {
-          [format(getYesterday(), DATE_FORMAT)]: {
-            marketPrice: value
-          }
-        }
+      // Fill the entire requested date range with the scraped value
+      const historical: {
+        [symbol: string]: { [date: string]: DataProviderHistoricalResponse };
+      } = {
+        [symbol]: {}
       };
+      let date = from;
+
+      while (isBefore(date, to)) {
+        historical[symbol][format(date, DATE_FORMAT)] = {
+          marketPrice: value
+        };
+
+        date = addDays(date, 1);
+      }
+
+      return historical;
     } catch (error) {
       throw new Error(
         `Could not get historical market data for ${symbol} (${this.getName()}) from ${format(
@@ -177,6 +186,28 @@ export class CustomService implements DataProviderInterface {
         }
       });
 
+      // Collect unique customDataSourceIds
+      const customDataSourceIds = symbolProfiles
+        .filter((sp) => sp.customDataSourceId)
+        .map((sp) => sp.customDataSourceId);
+
+      // Fetch all custom data sources in a single query
+      const customDataSources =
+        customDataSourceIds.length > 0
+          ? await this.prismaService.customDataSource.findMany({
+              where: {
+                id: {
+                  in: customDataSourceIds
+                }
+              }
+            })
+          : [];
+
+      // Create a map for quick lookups
+      const customDataSourceMap = new Map(
+        customDataSources.map((cds) => [cds.id, cds])
+      );
+
       // Prepare list of symbol profiles with scraper configuration and instant mode
       const symbolProfilesWithScraperConfigurationAndInstantMode = [];
 
@@ -185,7 +216,7 @@ export class CustomService implements DataProviderInterface {
 
         // Get the custom data source configuration if available
         if (symbolProfile.customDataSourceId) {
-          const customDataSource = await this.customDataSourceService.get(
+          const customDataSource = customDataSourceMap.get(
             symbolProfile.customDataSourceId
           );
           scraperConfig = customDataSource?.scraperConfiguration as unknown as

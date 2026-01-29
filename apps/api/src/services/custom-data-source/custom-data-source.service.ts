@@ -60,11 +60,19 @@ export class CustomDataSourceService {
       scraperConfiguration?: ScraperConfiguration;
     }
   ): Promise<CustomDataSource> {
+    const updateData: Prisma.CustomDataSourceUpdateInput = {};
+
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+
+    if (data.scraperConfiguration !== undefined) {
+      updateData.scraperConfiguration =
+        data.scraperConfiguration as unknown as Prisma.JsonObject;
+    }
+
     return this.prismaService.customDataSource.update({
-      data: {
-        name: data.name,
-        scraperConfiguration: data.scraperConfiguration as unknown as Prisma.JsonObject
-      },
+      data: updateData,
       where: { id }
     });
   }
