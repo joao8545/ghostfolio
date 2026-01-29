@@ -519,6 +519,7 @@ export class ImportService {
             countries,
             createdAt,
             cusip,
+            customDataSourceId: assetProfile.customDataSourceId,
             dataSource,
             figi,
             figiComposite,

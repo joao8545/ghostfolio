@@ -188,7 +188,7 @@ export class CustomService implements DataProviderInterface {
           const customDataSource = await this.customDataSourceService.get(
             symbolProfile.customDataSourceId
           );
-          scraperConfig = customDataSource?.scraperConfiguration as
+          scraperConfig = customDataSource?.scraperConfiguration as unknown as
             | ScraperConfiguration
             | null;
         }

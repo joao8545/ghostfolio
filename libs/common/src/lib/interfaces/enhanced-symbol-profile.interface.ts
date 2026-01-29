@@ -15,6 +15,7 @@ export interface EnhancedSymbolProfile {
   createdAt: Date;
   currency?: string;
   cusip?: string;
+  customDataSourceId?: string;
   dataProviderInfo?: DataProviderInfo;
   dataSource: DataSource;
   dateOfFirstActivity?: Date;

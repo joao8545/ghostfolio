@@ -16,7 +16,7 @@ export class CustomDataSourceService {
     return this.prismaService.customDataSource.create({
       data: {
         name: data.name,
-        scraperConfiguration: data.scraperConfiguration as Prisma.JsonObject,
+        scraperConfiguration: data.scraperConfiguration as unknown as Prisma.JsonObject,
         userId: data.userId
       }
     });
@@ -63,7 +63,7 @@ export class CustomDataSourceService {
     return this.prismaService.customDataSource.update({
       data: {
         name: data.name,
-        scraperConfiguration: data.scraperConfiguration as Prisma.JsonObject
+        scraperConfiguration: data.scraperConfiguration as unknown as Prisma.JsonObject
       },
       where: { id }
     });

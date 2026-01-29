@@ -452,7 +452,7 @@ export class AdminController {
       }
 
       const price = await this.customService.test(
-        customDataSource.scraperConfiguration as ScraperConfiguration
+        customDataSource.scraperConfiguration as unknown as ScraperConfiguration
       );
 
       if (price) {
