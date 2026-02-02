@@ -5,6 +5,7 @@ import { CreateAccountWithBalancesDto } from './create-account-with-balances.dto
 import { CreateAccountDto } from './create-account.dto';
 import { CreateAssetProfileWithMarketDataDto } from './create-asset-profile-with-market-data.dto';
 import { CreateAssetProfileDto } from './create-asset-profile.dto';
+import { CreateCustomDataSourceDto } from './create-custom-data-source.dto';
 import { CreateOrderDto } from './create-order.dto';
 import { CreatePlatformDto } from './create-platform.dto';
 import { CreateTagDto } from './create-tag.dto';
@@ -15,6 +16,7 @@ import { UpdateAccessDto } from './update-access.dto';
 import { UpdateAccountDto } from './update-account.dto';
 import { UpdateAssetProfileDto } from './update-asset-profile.dto';
 import { UpdateBulkMarketDataDto } from './update-bulk-market-data.dto';
+import { UpdateCustomDataSourceDto } from './update-custom-data-source.dto';
 import { UpdateMarketDataDto } from './update-market-data.dto';
 import { UpdateOrderDto } from './update-order.dto';
 import { UpdateOwnAccessTokenDto } from './update-own-access-token.dto';
@@ -31,6 +33,7 @@ export {
   CreateAccountWithBalancesDto,
   CreateAssetProfileDto,
   CreateAssetProfileWithMarketDataDto,
+  CreateCustomDataSourceDto,
   CreateOrderDto,
   CreatePlatformDto,
   CreateTagDto,
@@ -41,6 +44,7 @@ export {
   UpdateAccountDto,
   UpdateAssetProfileDto,
   UpdateBulkMarketDataDto,
+  UpdateCustomDataSourceDto,
   UpdateMarketDataDto,
   UpdateOrderDto,
   UpdateOwnAccessTokenDto,

@@ -191,6 +191,8 @@ model SymbolProfile {
   createdAt              DateTime                @default(now())
   currency               String
   cusip                  String?
+  customDataSource       CustomDataSource?       @relation("CustomDataSourceSymbols", fields: [customDataSourceId], references: [id], onDelete: SetNull)
+  customDataSourceId     String?
   dataSource             DataSource
   figi                   String?
   figiComposite          String?
@@ -215,6 +217,7 @@ model SymbolProfile {
   @@index([assetClass])
   @@index([currency])
   @@index([cusip])
+  @@index([customDataSourceId])
   @@index([dataSource])
   @@index([isActive])
   @@index([isin])
@@ -259,26 +262,27 @@ model Tag {
 }
 
 model User {
-  accessesGet   Access[]        @relation("accessGet")
-  accessesGive  Access[]        @relation("accessGive")
-  accessToken   String?
-  accounts      Account[]
-  activities    Order[]
-  analytics     Analytics?
-  apiKeys       ApiKey[]
-  authChallenge String?
-  authDevices   AuthDevice[]
-  createdAt     DateTime        @default(now())
-  id            String          @id @default(uuid())
-  provider      Provider        @default(ANONYMOUS)
-  role          Role            @default(USER)
-  settings      Settings?
-  subscriptions Subscription[]
-  tags          Tag[]
-  thirdPartyId  String?
-  updatedAt     DateTime        @updatedAt
-  watchlist     SymbolProfile[] @relation("UserWatchlist")
-  SymbolProfile SymbolProfile[]
+  accessesGet        Access[]           @relation("accessGet")
+  accessesGive       Access[]           @relation("accessGive")
+  accessToken        String?
+  accounts           Account[]
+  activities         Order[]
+  analytics          Analytics?
+  apiKeys            ApiKey[]
+  authChallenge      String?
+  authDevices        AuthDevice[]
+  createdAt          DateTime           @default(now())
+  customDataSources  CustomDataSource[]
+  id                 String             @id @default(uuid())
+  provider           Provider           @default(ANONYMOUS)
+  role               Role               @default(USER)
+  settings           Settings?
+  subscriptions      Subscription[]
+  tags               Tag[]
+  thirdPartyId       String?
+  updatedAt          DateTime           @updatedAt
+  watchlist          SymbolProfile[]    @relation("UserWatchlist")
+  SymbolProfile      SymbolProfile[]
 
   @@index([accessToken])
   @@index([createdAt])
@@ -314,9 +318,24 @@ enum AssetSubClass {
   STOCK
 }
 
+model CustomDataSource {
+  createdAt            DateTime        @default(now())
+  id                   String          @id @default(uuid())
+  name                 String          @unique
+  scraperConfiguration Json
+  updatedAt            DateTime        @updatedAt
+  userId               String?
+  user                 User?           @relation(fields: [userId], onDelete: Cascade, references: [id])
+  symbolProfiles       SymbolProfile[] @relation("CustomDataSourceSymbols")
+
+  @@index([name])
+  @@index([userId])
+}
+
 enum DataSource {
   ALPHA_VANTAGE
   COINGECKO
+  CUSTOM
   EOD_HISTORICAL_DATA
   FINANCIAL_MODELING_PREP
   GHOSTFOLIO
